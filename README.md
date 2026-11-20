@@ -6,7 +6,8 @@ Jeu d'exploration dont le seul but est de trouver des secrets cachés. Version w
 
 | Rôle | Choix |
 |---|---|
-| Moteur | [Phaser 4](https://phaser.io) (2D, WebGL/Canvas) |
+| Rendu 3D | [Three.js](https://threejs.org) (WebGL) |
+| Physique | [Rapier 3D](https://rapier.rs) (`@dimforge/rapier3d-compat`, WASM) |
 | Langage | TypeScript (strict) |
 | Build / serveur de dev | Vite |
 | Tests | Vitest |
@@ -26,8 +27,9 @@ npm run build   # build web -> dist/
 
 ```
 src/
-  main.ts        # configuration Phaser
-  scenes/        # une scène Phaser par fichier (PascalCase)
+  main.ts        # point d'entrée (renderer, boucle)
+  game/          # logique pure, sans Three.js ni Rapier, testée avec Vitest
+  scenes/        # une scène 3D par fichier (PascalCase)
   **/*.test.ts   # tests à côté du code testé
 public/          # assets statiques copiés tels quels
 ```
@@ -46,7 +48,7 @@ Espace           sauter
 Tab              carnet (pause)
 ```
 
-Logique pure dans `src/game/` (niveau, physique de la boule, secrets), testée avec Vitest ; rendu Phaser dans `src/scenes/PlayScene.ts`.
+Logique pure dans `src/game/` (niveau, physique de la boule, secrets), testée avec Vitest ; rendu dans `src/scenes/` (portage 3D en cours).
 
 ## Version web (GitHub Pages)
 

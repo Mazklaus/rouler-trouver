@@ -32,6 +32,9 @@ asset: sprites provisoires du niveau 1
 ## Code
 
 - TypeScript strict, pas de `any` sans commentaire justifiant.
-- Une scène Phaser par fichier dans `src/scenes/`, classes en PascalCase, fichiers nommés comme la classe.
-- La logique de jeu pure (règles, état) va dans des modules sans Phaser, pour être testable avec Vitest.
+- Une scène 3D par fichier dans `src/scenes/`, classes en PascalCase, fichiers nommés comme la classe.
+- La logique de jeu pure (règles, état, secrets) va dans `src/game/`, sans Three.js ni Rapier, pour être testable avec Vitest.
+- Unités : 1 unité = 1 mètre, axe Y vers le haut (convention Three.js et Rapier).
+- Rapier s'initialise une fois (`await RAPIER.init()`) avant de créer le monde ; pas de pas de simulation variable : pas fixe de 1/60 s.
+- Libérer les ressources Three.js (`geometry.dispose()`, `material.dispose()`) quand un niveau est retiré.
 - Code et noms en anglais, commentaires et docs en français.
