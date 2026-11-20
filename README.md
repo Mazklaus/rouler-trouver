@@ -35,3 +35,15 @@ public/          # assets statiques copiés tels quels
 ## Conventions
 
 Voir [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Prototype (phase 1)
+
+Une zone, « Jardin », avec 3 secrets : un de rebond (à gauche), un d'élan (au-delà du trou), un caché (derrière le buisson).
+
+```
+Flèches / Q D    rouler
+Espace           sauter
+Tab              carnet (pause)
+```
+
+Logique pure dans `src/game/` (niveau, physique de la boule, secrets), testée avec Vitest ; rendu Phaser dans `src/scenes/PlayScene.ts`.
