@@ -47,3 +47,10 @@ Tab              carnet (pause)
 ```
 
 Logique pure dans `src/game/` (niveau, physique de la boule, secrets), testée avec Vitest ; rendu Phaser dans `src/scenes/PlayScene.ts`.
+
+## Version web (GitHub Pages)
+
+Chaque push sur `main` lance `.github/workflows/deploy.yml` : build Vite puis publication de `dist/` sur GitHub Pages.
+Réglage à faire une seule fois : **Settings > Pages > Source = GitHub Actions**.
+Lancement manuel possible : onglet Actions > « Deploy (GitHub Pages) » > Run workflow.
+Adresse : https://mazklaus.github.io/rouler-trouver/
