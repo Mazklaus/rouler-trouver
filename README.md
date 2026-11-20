@@ -35,3 +35,10 @@ public/          # assets statiques copiés tels quels
 ## Conventions
 
 Voir [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Version web (GitHub Pages)
+
+Chaque push sur `main` lance `.github/workflows/deploy.yml` : build Vite puis publication de `dist/` sur GitHub Pages.
+Réglage à faire une seule fois : **Settings > Pages > Source = GitHub Actions**.
+Lancement manuel possible : onglet Actions > « Deploy (GitHub Pages) » > Run workflow.
+Adresse : https://mazklaus.github.io/rouler-trouver/
