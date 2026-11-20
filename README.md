@@ -29,6 +29,7 @@ npm run build   # build web -> dist/
 src/
   main.ts        # point d'entrée (renderer, boucle)
   game/          # logique pure, sans Three.js ni Rapier, testée avec Vitest
+  world/         # monde physique Rapier (sans Three.js), testé avec Vitest
   scenes/        # une scène 3D par fichier (PascalCase)
   **/*.test.ts   # tests à côté du code testé
 public/          # assets statiques copiés tels quels
@@ -48,7 +49,7 @@ Espace           sauter
 Tab              carnet (pause)
 ```
 
-Logique pure dans `src/game/` (niveau, physique de la boule, secrets), testée avec Vitest ; rendu dans `src/scenes/` (portage 3D en cours).
+Logique pure dans `src/game/` (niveau, physique de la boule, secrets), testée avec Vitest ; monde physique Rapier dans `src/world/`, rendu Three.js dans `src/scenes/`.
 
 ## Version web (GitHub Pages)
 

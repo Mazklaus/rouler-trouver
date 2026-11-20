@@ -1,11 +1,30 @@
-import Phaser from 'phaser';
-import { PlayScene } from './scenes/PlayScene';
+import RAPIER from '@dimforge/rapier3d-compat';
+import * as THREE from 'three';
+import { GardenScene } from './scenes/GardenScene';
 
-new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: 'game',
-  backgroundColor: '#111111',
-  scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' },
-  physics: { default: 'arcade', arcade: { debug: false } },
-  scene: [PlayScene],
-});
+async function start(): Promise<void> {
+  await RAPIER.init();
+
+  const container = document.getElementById('game')!;
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  container.append(renderer.domElement);
+
+  const scene = new GardenScene(renderer);
+  const resize = (): void => {
+    const { clientWidth: w, clientHeight: h } = container;
+    renderer.setSize(w, h);
+    scene.resize(w, h);
+  };
+  window.addEventListener('resize', resize);
+  resize();
+
+  const clock = new THREE.Timer();
+  renderer.setAnimationLoop((time) => {
+    clock.update(time);
+    scene.update(clock.getDelta());
+  });
+}
+
+void start();

@@ -1,15 +1,20 @@
 /**
- * Données et géométrie du niveau, sans Phaser.
- * Le sol est une ligne brisée (une hauteur par x). Repère écran : y vers le bas.
+ * Données du niveau, sans Three.js ni Rapier.
+ * Convention : 1 unité = 1 m, Y vers le haut. Le parcours suit l'axe X, la profondeur est l'axe Z.
  */
 
-export type SurfaceKind = 'ground' | 'bounce' | 'gap';
+export type Vec3 = { x: number; y: number; z: number };
 
-/** Un point du sol. `kind` décrit le segment qui part de ce point vers le suivant. */
-export interface GroundPoint {
-  x: number;
-  y: number;
-  kind?: SurfaceKind;
+export type BlockKind = 'ground' | 'bounce';
+
+/** Bloc statique : un pavé, éventuellement incliné autour de Z (pente le long de X). */
+export interface Block {
+  center: Vec3;
+  /** Dimensions complètes (largeur X, hauteur Y, profondeur Z). */
+  size: Vec3;
+  /** Rotation autour de Z, en radians (pente). */
+  rotZ: number;
+  kind: BlockKind;
 }
 
 export type SecretType = 'hidden' | 'momentum' | 'bounce';
@@ -17,87 +22,79 @@ export type SecretType = 'hidden' | 'momentum' | 'bounce';
 export interface SecretDef {
   id: string;
   type: SecretType;
-  x: number;
-  y: number;
+  position: Vec3;
 }
 
+/** Décor sans collision : la boule le traverse, mais il masque ce qui est dedans. */
 export interface Decor {
-  /** Décor de premier plan qui masque ce qui est derrière (secret « caché »). */
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  center: Vec3;
+  size: Vec3;
 }
 
 export interface LevelDef {
   name: string;
-  width: number;
   /** En dessous de cette hauteur, la boule est tombée. */
   killY: number;
-  start: { x: number; y: number };
-  ground: GroundPoint[];
+  start: Vec3;
+  blocks: Block[];
   secrets: SecretDef[];
   decors: Decor[];
 }
 
-export interface GroundSample {
-  y: number;
-  /** dy/dx du segment (positif = descend vers la droite). */
-  slope: number;
-  kind: Exclude<SurfaceKind, 'gap'>;
+const THICKNESS = 1;
+
+/** Plateau plat de x0 à x1, dessus à la hauteur `top`. */
+export function flat(x0: number, x1: number, top: number, depth: number, kind: BlockKind = 'ground', bottom = top - THICKNESS): Block {
+  const h = top - bottom;
+  return { center: { x: (x0 + x1) / 2, y: top - h / 2, z: 0 }, size: { x: x1 - x0, y: h, z: depth }, rotZ: 0, kind };
 }
 
-/**
- * Hauteur du sol en x, ou null s'il n'y a pas de sol (trou ou hors niveau).
- * Deux points de même x forment une marche verticale (mur) : le segment de largeur nulle est ignoré.
- */
-export function groundAt(ground: readonly GroundPoint[], x: number): GroundSample | null {
-  for (let i = 0; i < ground.length - 1; i++) {
-    const a = ground[i]!;
-    const b = ground[i + 1]!;
-    if (b.x <= a.x) continue;
-    if (x >= a.x && x < b.x) {
-      const kind = a.kind ?? 'ground';
-      if (kind === 'gap') return null;
-      const slope = (b.y - a.y) / (b.x - a.x);
-      return { y: a.y + slope * (x - a.x), slope, kind };
-    }
-  }
-  return null;
+/** Pente dont le dessus relie (x0, y0) à (x1, y1). */
+export function ramp(x0: number, y0: number, x1: number, y1: number, depth: number): Block {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const len = Math.hypot(dx, dy);
+  const rotZ = Math.atan2(dy, dx);
+  // Le centre est sous le milieu du dessus, décalé d'une demi-épaisseur le long de la normale.
+  const nx = -Math.sin(rotZ);
+  const ny = Math.cos(rotZ);
+  return {
+    center: { x: (x0 + x1) / 2 - (nx * THICKNESS) / 2, y: (y0 + y1) / 2 - (ny * THICKNESS) / 2, z: 0 },
+    size: { x: len, y: THICKNESS, z: depth },
+    rotZ,
+    kind: 'ground',
+  };
 }
 
+const D = 10; // profondeur du parcours
+
 /**
- * Zone de test « Jardin » : 3 secrets (rebond, élan, caché).
- * De gauche à droite : pilier + champignon de rebond, départ, colline,
- * descente vers un tremplin, trou, montée, colline, plaine avec buisson.
+ * Zone de test « Jardin », 3 secrets.
+ * De gauche à droite : pilier + champignon de rebond, départ, colline, descente,
+ * trou à franchir avec de l'élan, plateau du secret d'élan, colline, plaine avec buisson.
  */
 export const GARDEN: LevelDef = {
   name: 'Jardin',
-  width: 4000,
-  killY: 1000,
-  start: { x: 520, y: 650 },
-  ground: [
-    { x: 0, y: 0 },
-    { x: 0, y: 380 }, // mur gauche puis haut du pilier
-    { x: 220, y: 380 },
-    { x: 220, y: 650, kind: 'bounce' }, // champignon de rebond
-    { x: 340, y: 650 },
-    { x: 600, y: 650 },
-    { x: 1000, y: 450 }, // sommet de la colline gauche
-    { x: 1150, y: 450 },
-    { x: 1800, y: 650, kind: 'gap' }, // bord du tremplin, puis trou
-    { x: 2060, y: 650 },
-    { x: 2700, y: 450 }, // sommet de la colline droite
-    { x: 2850, y: 450 },
-    { x: 3100, y: 650 },
-    { x: 3900, y: 650 },
-    { x: 3900, y: 0 }, // mur droit
-    { x: 4000, y: 0 },
+  killY: -10,
+  start: { x: 0, y: 0.5, z: 0 },
+  blocks: [
+    flat(-18, -12, 4, D, 'ground', -1), // pilier
+    flat(-12, -9, 0, D, 'bounce'), // champignon de rebond
+    flat(-9, 10, 0, D), // départ
+    ramp(10, 0, 18, 4, D),
+    flat(18, 21, 4, D, 'ground', 0),
+    ramp(21, 4, 33, 0, D),
+    // trou de 33 à 38.5
+    flat(38.5, 46, 0, D),
+    ramp(46, 0, 54, 4, D),
+    flat(54, 57, 4, D, 'ground', 0),
+    ramp(57, 4, 65, 0, D),
+    flat(65, 90, 0, D),
   ],
   secrets: [
-    { id: 'jardin-rebond', type: 'bounce', x: 110, y: 340 },
-    { id: 'jardin-elan', type: 'momentum', x: 2110, y: 600 },
-    { id: 'jardin-cache', type: 'hidden', x: 3450, y: 620 },
+    { id: 'jardin-rebond', type: 'bounce', position: { x: -15, y: 4.6, z: 0 } },
+    { id: 'jardin-elan', type: 'momentum', position: { x: 39.8, y: 0.6, z: 0 } },
+    { id: 'jardin-cache', type: 'hidden', position: { x: 80, y: 0.6, z: -1 } },
   ],
-  decors: [{ x: 3380, y: 560, width: 150, height: 92 }],
+  decors: [{ center: { x: 80, y: 1, z: -0.5 }, size: { x: 3, y: 2, z: 3 } }],
 };
